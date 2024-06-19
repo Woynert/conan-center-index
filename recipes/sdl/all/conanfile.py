@@ -158,6 +158,8 @@ class SDLConan(ConanFile):
                 self.requires("egl/system")
             if self.options.libunwind:
                 self.requires("libunwind/1.8.0")
+            if self.options.x11:
+                self.requires("xorg/system")
 
     def validate(self):
         # SDL>=2.0.18 requires xcode 12 or higher because it uses CoreHaptics.
@@ -230,6 +232,7 @@ class SDLConan(ConanFile):
             }.get(str(self.settings.arch), str(self.settings.arch))
         cmake_required_includes = []  # List of directories used by CheckIncludeFile (https://cmake.org/cmake/help/latest/module/CheckIncludeFile.html)
         cmake_extra_ldflags = []
+        cmake_extra_cflags = []
         cmake_extra_libs = []
 
         if self.settings.os != "Windows" and not self.options.shared:
@@ -265,6 +268,9 @@ class SDLConan(ConanFile):
                         cmake_extra_libs += self.dependencies["pulseaudio"].cpp_info.components[component].libs
                         cmake_extra_ldflags += ["-L{}".format(it) for it in self.dependencies["pulseaudio"].cpp_info.components[component].libdirs]
                 cmake_extra_ldflags += ["-lxcb", "-lrt"]  # FIXME: SDL sources doesn't take into account transitive dependencies
+            if self.options.x11:
+                for component in ["x11", "xcb", "xi", "xcursor", "xfixes", "xrender", "xext", "xrandr", "xscrnsaver"]:
+                    cmake_extra_cflags += ["-I{}".format(it) for it in self.dependencies["xorg"].cpp_info.components[component].includedirs]
             tc.variables["SDL_SNDIO"] = self.options.sndio
             if self.options.sndio:
                 tc.variables["SDL_SNDIO_SHARED"] = self.options["sndio"].shared
@@ -322,7 +328,7 @@ class SDLConan(ConanFile):
         # Add extra information collected from the deps
         tc.variables["EXTRA_LDFLAGS"] = ";".join(cmake_extra_ldflags)
         tc.variables["CMAKE_REQUIRED_INCLUDES"] = ";".join(cmake_required_includes)
-        cmake_extra_cflags = ["-I{}".format(path) for _, dep in self.dependencies.items() for path in dep.cpp_info.includedirs]
+        cmake_extra_cflags += ["-I{}".format(path) for _, dep in self.dependencies.items() for path in dep.cpp_info.includedirs]
         tc.variables["EXTRA_CFLAGS"] = ";".join(cmake_extra_cflags).replace(os.sep, '/')
         tc.variables["EXTRA_LIBS"] = ";".join(cmake_extra_libs)
         tc.cache_variables["CMAKE_POLICY_DEFAULT_CMP0077"] = "NEW"
@@ -406,6 +412,9 @@ class SDLConan(ConanFile):
                 self.cpp_info.components["libsdl2"].requires.append("wayland::wayland")
                 self.cpp_info.components["libsdl2"].requires.append("xkbcommon::xkbcommon")
                 self.cpp_info.components["libsdl2"].requires.append("egl::egl")
+            if self.options.x11:
+                for component in ["xorg::{}".format(it) for it in ["x11", "xcb", "xi", "xcursor", "xfixes", "xrender", "xext", "xrandr", "xscrnsaver"]]:
+                    self.cpp_info.components["libsdl2"].requires.append(component)
             if self.options.libunwind:
                 self.cpp_info.components["libsdl2"].requires.append("libunwind::libunwind")
         elif is_apple_os(self) and not self.options.shared:
