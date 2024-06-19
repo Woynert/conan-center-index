@@ -23,25 +23,10 @@ class ConanGTK(ConanFile):
         if self.settings.os not in ["Linux", "FreeBSD"]:
             raise ConanInvalidConfiguration("This recipe supports only Linux and FreeBSD")
 
-    # TODO
-    # def system_requirements(self):
-        # dnf = package_manager.Dnf(self)
-        # dnf.install([f"gtk{self.options.version}-devel"], update=True, check=True)
-
-        # yum = package_manager.Yum(self)
-        # yum.install([f"gtk{self.options.version}-devel"], update=True, check=True)
-
-        # apt = package_manager.Apt(self)
-        # apt.install(["libgtk2.0-dev"] if self.options.version == 2 else ["libgtk-3-dev"], update=True, check=True)
-
-        # pacman = package_manager.PacMan(self)
-        # pacman.install([f"gtk{self.options.version}"], update=True, check=True)
-
-        # zypper = package_manager.Zypper(self)
-        # zypper.install([f"gtk{self.options.version}-devel"], update=True, check=True)
-
-        # pkg = package_manager.Pkg(self)
-        # pkg.install([f"gtk{self.options.version}"], update=True, check=True)
+    # TODO: yum, dnf, zypper, pacman, pkg
+    def system_requirements(self):
+        apt = package_manager.Apt(self)
+        apt.install(["libglvnd-dev"], update=True, check=True)
 
     def package_info(self):
         for name in ["egl", "gl", "glesv1_cm", "glesv2", "glx", "libglvnd", "opengl"]:
